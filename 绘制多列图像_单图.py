@@ -123,7 +123,7 @@ data_max = np.max(max_list)
 
 
 # fig,ax = plt.subplots(1, 3,figsize = (17,10),sharey=True)
-fig,ax = plt.subplots(1, 3,figsize = (17,10))
+fig,ax = plt.subplots(2, 3,figsize = (17,10))
 
 
 vmin = data_min
@@ -135,31 +135,35 @@ vmax = data_max
 
 # im1 = ax[0].imshow(tif_data01,extent = extent, cmap = 'jet')
 
-im1 = ax[0].imshow(tif_data01, cmap = 'jet', vmin = 30, vmax = 35)
+im1 = ax[1][0].imshow(tif_data01, cmap = 'jet', vmin = 30, vmax = 35)
 
 # ax[0].set_axis_off()
-im2 = ax[1].imshow(tif_data02,cmap = 'jet', vmin = 26, vmax = 39)
+im2 = ax[0][1].imshow(tif_data02,cmap = 'jet', vmin = 26, vmax = 39)
 # ax[1].set_axis_off()
 # im3 = ax[2].imshow(tif_data03,extent = extent,norm = norm,cmap = 'jet')
 # ax[2].set_axis_off()
-ax[2].text(.8,-.02,'\nVisualization by DataCharm',transform = ax[2].transAxes,
-        ha='center', va='center',fontsize = 10,color='black')
 
-fig.subplots_adjust(right=1)
+# ax[2].text(.8,-.02,'\nVisualization by DataCharm',transform = ax[2].transAxes,
+#         ha='center', va='center',fontsize = 10,color='black')
+
+# fig.subplots_adjust(right=1)==========
 
 #前面三个子图的总宽度为全部宽度的 0.9；剩下的0.1用来放置colorbar
 fig.subplots_adjust(right=0.9)
 position = fig.add_axes([0.9, 0.22, 0.015, .55 ])#位置[左,下,右,上]
-cb = fig.colorbar(im1, cax=position)
+# cb = fig.colorbar(im1, ax= ax[1][0], cax=position, extend)
+cb = fig.colorbar(im1, ax= ax[1][0]) # extend的作用
+fig.colorbar(im2,ax=ax[0][1])
 
 #设置colorbar标签字体等
-colorbarfontdict = {"size":15,"color":"k",'family':'Times New Roman'}
-cb.ax.set_title('Values',fontdict=colorbarfontdict,pad=8)
-cb.ax.set_ylabel('EvapotTranspiration(ET)',fontdict=colorbarfontdict)
-cb.ax.tick_params(labelsize=11,direction='in')
+# colorbarfontdict = {"size":15,"color":"k",'family':'Times New Roman'}
+# cb.ax.set_title('Values',fontdict=colorbarfontdict,pad=8)
+# cb.ax.set_ylabel('EvapotTranspiration(ET)',fontdict=colorbarfontdict)
+# cb.ax.tick_params(labelsize=11,direction='in')
+
 #cb.ax.set_yticklabels(['0','10','20','30','40','50','>60'],family='Times New Roman')
-fig.suptitle('One Colorbar for Multiple Map Plot ',size=22,family='Times New Roman',
-             x=.55,y=.9)
+# fig.suptitle('One Colorbar for Multiple Map Plot ',size=22,family='Times New Roman',
+             # x=.55,y=.9)
 # plt.savefig(r'F:\DataCharm\Python-matplotlib 空间数据可视化\map_colorbar.png',dpi = 600,
             # bbox_inches='tight',width = 12,height=4)
 plt.show()
