@@ -1,5 +1,19 @@
 # -*- coding: utf-8 -*-
 """
+Created on Sun Apr  2 13:19:43 2023
+
+@author: a8362
+"""
+
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Apr  2 11:11:24 2023
+
+@author: a8362
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Thu Mar 23 00:34:44 2023
 
 @author: a8362
@@ -13,10 +27,10 @@ import numpy as np
 from osgeo import gdal
 import netCDF4 as nc
 import pandas as pd
-
+# In[]
 # 读取landsatlst数据以及多种遥感光谱指数并聚合到9km====================================================
 variables = {}
-basepath =  r'D:\xiaojie\data1\final'
+basepath =  r'D:\xiaojie\data1\spring'
 basefiles = os.listdir(basepath) #[ndvi,nbdi,lst,...]
 for basefile in basefiles:
     if(basefile == 'era5lst' or basefile == 'output'):continue
@@ -86,7 +100,7 @@ for basefile in basefiles:
 
 
 
-landlst = variables['landlst'+'9km']   #9km数据
+landlst = variables['landlst'+'9km']   #9km数据,由30m分辨率的landlst聚合得到
 mndwi = variables['mndwi'+'9km']
 msavi = variables['msavi'+'9km']
 ndbi = variables['ndbi'+'9km']
@@ -95,12 +109,16 @@ ndvi = variables['ndvi'+'9km']
 savi = variables['savi'+'9km']
 
 print("读取各遥感光谱指数成功!")
+
+
+
+
 # ====================================================
 # In[]  读取era5lst数据
 
 era5lst = []
 
-era5path = r'D:\xiaojie\data1\final\era5lst\20130809.nc'
+era5path = r'D:\xiaojie\data1\spring\era5lst\20180401.nc'
 with nc.Dataset(era5path) as file:
     file.set_auto_mask(False)  # 可选
     tempvari = {x: file[x][()] for x in file.variables}
@@ -128,7 +146,7 @@ for row in range(landlst.shape[0]):
         df.loc[len(df.index)] = [mndwi[row,column],msavi[row,column],ndbi[row,column],ndmi[row,column],
                                  ndvi[row,column],savi[row,column],era5lst[row,column]]
 
-df.to_csv(r"D:\xiaojie\data1\sample9km.csv",index=False,sep=',')
+df.to_csv(r"D:\xiaojie\data1\spring_sample9km.csv",index=False,sep=',')
 print("create sample success")
 
 
@@ -168,7 +186,7 @@ def cal_pccs(x, y, n):
 rf = RandomForestRegressor(n_estimators=77,random_state=0,max_depth=5,max_features=3)   
 
 
-df = pd.read_csv(r"D:\xiaojie\data1\sample9km.csv",low_memory = False)
+df = pd.read_csv(r"D:\xiaojie\data1\spring_sample9km.csv",low_memory = False)
 sample = df.to_numpy()
 
 # X,Y = load_boston(return_X_y=True)
@@ -222,8 +240,8 @@ ndbi300m = variables['ndbi300m']
 ndmi300m= variables['ndmi300m']
 ndvi300m= variables['ndvi300m']
 savi300m= variables['savi300m']
-
-downscalelst = np.zeros((540,390),dtype = np.float64)
+# 这里的downscalelst对应降尺度后的era5lst
+downscalelst300m = np.zeros((540,390),dtype = np.float64)
 
 df = pd.DataFrame(data=None,columns=['MNDWI_9KM','MSAVI_9KM','NDBI_9KM','NDMI_9KM','NDVI_9KM','SAVI_9KM','ERA5LST_9KM','row', 'colum'])
 for row in range(540):
@@ -235,7 +253,7 @@ for row in range(540):
                or np.isnan(ndmi300m[row,column]) 
                or np.isnan(ndvi300m[row,column])
                or np.isnan(savi300m[row,column])):
-            downscalelst[row,column] = np.nan
+            downscalelst300m[row,column] = np.nan
             continue
         df.loc[len(df.index)] = [mndwi300m[row,column],msavi300m[row,column],ndbi300m[row,column],ndmi300m[row,column],
                                  ndvi300m[row,column],savi300m[row,column],np.nan,row, column]
@@ -252,7 +270,7 @@ df_to_arr = np.array(df)
 predict = df_to_arr[:,:6]
 predict_result = rf.predict(predict)
 for i in range(df_to_arr.shape[0]):
-    downscalelst[int(df_to_arr[i,7]),int(df_to_arr[i,8])] = predict_result[i]
+    downscalelst300m[int(df_to_arr[i,7]),int(df_to_arr[i,8])] = predict_result[i]
 
 
 # In[] 降尺度到500m
@@ -333,38 +351,19 @@ for i in range(df_to_arr.shape[0]):
 
 
 # In[] landsat30m聚合到landsat500m
-dataset = gdal.Open(r'D:\xiaojie\data1\final\landlst\20130809_lst.tif')
-band = dataset.GetRasterBand(1)
-landsatlst30m = np.zeros((5400,3900))
-data = band.ReadAsArray() #30m分辨率,5136*3846
-landsatlst30m[:data.shape[0],:data.shape[1]] = data
-landsatlst30m[landsatlst30m == 32767] = np.nan
-landsatlst30m[landsatlst30m == 0] = np.nan
-landsatlst30m = landsatlst30m/10-273
+# dataset = gdal.Open(r'D:\xiaojie\data1\final\landlst\20130809_lst.tif')
+# band = dataset.GetRasterBand(1)
+# landsatlst30m = np.zeros((5400,3900))
+# data = band.ReadAsArray() #30m分辨率,5136*3846
+# landsatlst30m[:data.shape[0],:data.shape[1]] = data
+# landsatlst30m[landsatlst30m == 32767] = np.nan
+# landsatlst30m[landsatlst30m == 0] = np.nan
+# landsatlst30m = landsatlst30m/10-273
 
-landsatlst500m = np.zeros((337,243))
-
-for a in range(337):
-    for b in range(243):
-        starti = a*16
-        startj = b *16
-        landsatlst500m[a,b] = np.nanmean(landsatlst30m[starti:starti+16,startj:startj+16].reshape(-1))
-        
-        
-        
-        
-# In[]  landsat2km
-landsatlst2km = np.zeros((81,59))
-for a in range(81):
-    for b in range(59):
-        starti = a*66
-        startj = b *66
-        landsatlst2km[a,b] = np.nanmean(landsatlst30m[starti:starti+66,startj:startj+66].reshape(-1))
-
-
-# In[]
+landsatlst500m = variables['landlst500m']
+landsatlst2km = variables['landlst2km']
 landsat300m = variables['landlst300m']
-downscalelst300m = np.load(r'D:\xiaojie\data1\final\output\code\downscalelst300m.npy')
+# downscalelst300m = np.load(r'D:\xiaojie\data1\final\output\code\downscalelst300m.npy')
 
 
 
@@ -452,6 +451,143 @@ print(pearsonr(predict_result, origin_result))
 
 # In[] 绘图
 
+# from osgeo import gdal
+# import numpy as np
+# import matplotlib.pyplot as plt
+# import os
+
+# #获取对应的数据
+
+# tif_data01 = landsat300m[20:landsat300m.shape[0]-35,10:landsat300m.shape[1]-15]
+
+
+# tif_data02 = downscalelst300m[20:downscalelst300m.shape[0]-35,10:downscalelst300m.shape[1]-15]
+
+# tif_data03 =  landsatlst500m[20:landsatlst500m.shape[0]-35,10:landsatlst500m.shape[1]-15]
+
+# tif_data04 = downscalelst500m[20:downscalelst500m.shape[0]-35,10:downscalelst500m.shape[1]-20]
+
+# tif_data05 = landsatlst2km[5:landsatlst2km.shape[0]-15,5:landsatlst2km.shape[1]-8]
+
+# tif_data06 = downscalelst2km[5:downscalelst2km.shape[0]-15,5:downscalelst2km.shape[1]-7]
+# # ==========================================================
+
+
+
+# min_list = []
+# max_list = []
+
+
+# min_list2 = []
+# max_list2 = []
+
+
+# min_list.append(np.nanmin(tif_data01))
+# min_list.append(np.nanmin(tif_data02))
+# # min_list.append(np.nanmin(tif_data03))
+# data_min = np.min(min_list)
+
+# max_list.append(np.nanmax(tif_data01))
+# max_list.append(np.nanmax(tif_data02))
+# # max_list.append(np.nanmax(tif_data03))
+
+# data_max = np.max(max_list)
+
+
+
+# # fig,ax = plt.subplots(1, 3,figsize = (17,10),sharey=True)
+# fig,ax = plt.subplots(2, 3,figsize = (10,7))
+
+
+# vmin = data_min
+# vmax = data_max
+# #Normalize()跟归一化没有任何关系，函数的作用是将颜色映射到vmin-vmax上，
+# #颜色表/颜色柱的起始和终止分别取值vmin和vmax
+# # norm = Normalize(vmin = vmin,vmax = vmax)
+# # extent = (112,114,22,24)
+
+# # im1 = ax[0].imshow(tif_data01,extent = extent, cmap = 'jet')
+
+
+# ax[0][0].set_xticks([])
+# ax[0][0].set_yticks([])
+
+# ax[0][1].set_xticks([])
+# ax[0][1].set_yticks([])
+
+# ax[0][2].set_xticks([])
+# ax[0][2].set_yticks([])
+
+
+# ax[1][0].set_xticks([])
+# ax[1][0].set_yticks([])
+
+# ax[1][1].set_xticks([])
+# ax[1][1].set_yticks([])
+
+# ax[1][2].set_xticks([])
+# ax[1][2].set_yticks([])
+
+# im1 = ax[0][0].imshow(tif_data01, cmap = 'jet', vmin = np.nanmin(5), vmax = np.nanmax(40))
+
+# im2 = ax[0][1].imshow(tif_data02,cmap = 'jet', vmin = np.nanmin(tif_data02), vmax = np.nanmax(tif_data02))
+
+# im3 = ax[0][2].imshow(tif_data03,cmap = 'jet', vmin = 5, vmax = 40)
+
+# im4 = ax[1][0].imshow(tif_data04,cmap = 'jet', vmin = np.nanmin(tif_data04), vmax = np.nanmax(tif_data04))
+
+# im5 = ax[1][1].imshow(tif_data05,cmap = 'jet', vmin = 5, vmax = 40)
+
+# im6 = ax[1][2].imshow(tif_data06,cmap = 'jet', vmin = np.nanmin(tif_data06), vmax = np.nanmax(tif_data06))
+
+
+
+# # ax[1].set_axis_off()
+# # im3 = ax[2].imshow(tif_data03,extent = extent,norm = norm,cmap = 'jet')
+# # ax[2].set_axis_off()
+
+# # ax[2].text(.8,-.02,'\nVisualization by DataCharm',transform = ax[2].transAxes,
+# #         ha='center', va='center',fontsize = 10,color='black')
+
+# # fig.subplots_adjust(right=1)==========
+
+# #前面三个子图的总宽度为全部宽度的 0.9；剩下的0.1用来放置colorbar
+# # fig.subplots_adjust(right=0.9)
+# # position = fig.add_axes([0.9, 0.22, 0.015, .55 ])#位置[左,下,右,上]
+# # cb = fig.colorbar(im1, ax= ax[1][0], cax=position, extend)
+# cb = fig.colorbar(im1, ax= ax[0][0]) # extend的作用
+# cb.ax.set_title('/℃')
+# cb = fig.colorbar(im2,ax=ax[0][1])
+# cb.ax.set_title('/℃')
+
+# cb = fig.colorbar(im3,ax=ax[0][2])
+# cb.ax.set_title('/℃')
+
+# cb =fig.colorbar(im4,ax=ax[1][0])
+# cb.ax.set_title('/℃')
+
+# cb =fig.colorbar(im5,ax=ax[1][1])
+# cb.ax.set_title('/℃')
+
+# cb =fig.colorbar(im6,ax=ax[1][2])
+# cb.ax.set_title('/℃')
+
+
+# #设置colorbar标签字体等
+# # colorbarfontdict = {"size":15,"color":"k",'family':'Times New Roman'}
+# # cb.ax.set_title('Values',fontdict=colorbarfontdict,pad=8)
+# # cb.ax.set_ylabel('EvapotTranspiration(ET)',fontdict=colorbarfontdict)
+# # cb.ax.tick_params(labelsize=11,direction='in')
+
+# #cb.ax.set_yticklabels(['0','10','20','30','40','50','>60'],family='Times New Roman')
+# # fig.suptitle('One Colorbar for Multiple Map Plot ',size=22,family='Times New Roman',
+#              # x=.55,y=.9)
+# # plt.savefig(r'F:\DataCharm\Python-matplotlib 空间数据可视化\map_colorbar.png',dpi = 600,
+#             # bbox_inches='tight',width = 12,height=4)
+# plt.show()
+
+# In[]
+
 from osgeo import gdal
 import numpy as np
 import matplotlib.pyplot as plt
@@ -459,18 +595,18 @@ import os
 
 #获取对应的数据
 
-tif_data01 = landsat300m
+tif_data01 = landsat300m[20:landsat300m.shape[0]-35,10:landsat300m.shape[1]-15]
 
 
-tif_data02 = downscalelst300m
+tif_data02 = downscalelst300m[20:downscalelst300m.shape[0]-35,10:downscalelst300m.shape[1]-15]
 
-tif_data03 =  landsatlst500m
+tif_data03 =  landsatlst500m[20:landsatlst500m.shape[0]-35,10:landsatlst500m.shape[1]-15]
 
-tif_data04 = downscalelst500m
+tif_data04 = downscalelst500m[20:downscalelst500m.shape[0]-35,10:downscalelst500m.shape[1]-20]
 
-tif_data05 = landsatlst2km
+tif_data05 = landsatlst2km[5:landsatlst2km.shape[0]-15,5:landsatlst2km.shape[1]-8]
 
-tif_data06 = downscalelst2km
+tif_data06 = downscalelst2km[5:downscalelst2km.shape[0]-15,5:downscalelst2km.shape[1]-7]
 # ==========================================================
 
 
@@ -497,7 +633,7 @@ data_max = np.max(max_list)
 
 
 # fig,ax = plt.subplots(1, 3,figsize = (17,10),sharey=True)
-fig,ax = plt.subplots(2, 3,figsize = (19,10))
+fig,ax = plt.subplots(1, 3,figsize = (10,3))
 
 
 vmin = data_min
@@ -509,18 +645,25 @@ vmax = data_max
 
 # im1 = ax[0].imshow(tif_data01,extent = extent, cmap = 'jet')
 
-im1 = ax[0][0].imshow(tif_data01, cmap = 'jet', vmin = 25, vmax = 45)
 
-# ax[0].set_axis_off()
-im2 = ax[0][1].imshow(tif_data02,cmap = 'jet', vmin = np.nanmin(tif_data02), vmax = np.nanmax(tif_data02))
+ax[0].set_xticks([])
+ax[0].set_yticks([])
 
-im3 = ax[0][2].imshow(tif_data03,cmap = 'jet', vmin = 25, vmax = 45)
+ax[1].set_xticks([])
+ax[1].set_yticks([])
 
-im4 = ax[1][0].imshow(tif_data04,cmap = 'jet', vmin = np.nanmin(tif_data04), vmax = np.nanmax(tif_data04))
+ax[2].set_xticks([])
+ax[2].set_yticks([])
 
-im5 = ax[1][1].imshow(tif_data05,cmap = 'jet', vmin = np.nanmin(tif_data05), vmax = np.nanmax(tif_data05))
 
-im6 = ax[1][2].imshow(tif_data06,cmap = 'jet', vmin = np.nanmin(tif_data06), vmax = np.nanmax(tif_data06))
+
+
+
+im4 = ax[0].imshow(tif_data04,cmap = 'jet', vmin = np.nanmin(tif_data04), vmax = np.nanmax(tif_data04))
+
+im5 = ax[1].imshow(tif_data05,cmap = 'jet', vmin = 5, vmax = 40)
+
+im6 = ax[2].imshow(tif_data06,cmap = 'jet', vmin = np.nanmin(tif_data06), vmax = np.nanmax(tif_data06))
 
 
 
@@ -537,12 +680,17 @@ im6 = ax[1][2].imshow(tif_data06,cmap = 'jet', vmin = np.nanmin(tif_data06), vma
 # fig.subplots_adjust(right=0.9)
 # position = fig.add_axes([0.9, 0.22, 0.015, .55 ])#位置[左,下,右,上]
 # cb = fig.colorbar(im1, ax= ax[1][0], cax=position, extend)
-cb = fig.colorbar(im1, ax= ax[0][0]) # extend的作用
-fig.colorbar(im2,ax=ax[0][1])
-fig.colorbar(im3,ax=ax[0][2])
-fig.colorbar(im4,ax=ax[1][0])
-fig.colorbar(im5,ax=ax[1][1])
-fig.colorbar(im6,ax=ax[1][2])
+
+
+cb =fig.colorbar(im4,ax=ax[0])
+cb.ax.set_title('/℃')
+
+cb =fig.colorbar(im5,ax=ax[1])
+cb.ax.set_title('/℃')
+
+cb =fig.colorbar(im6,ax=ax[2])
+cb.ax.set_title('/℃')
+
 
 #设置colorbar标签字体等
 # colorbarfontdict = {"size":15,"color":"k",'family':'Times New Roman'}
@@ -552,15 +700,10 @@ fig.colorbar(im6,ax=ax[1][2])
 
 #cb.ax.set_yticklabels(['0','10','20','30','40','50','>60'],family='Times New Roman')
 # fig.suptitle('One Colorbar for Multiple Map Plot ',size=22,family='Times New Roman',
-             # x=.55,y=.9)
+              # x=.55,y=.9)
 # plt.savefig(r'F:\DataCharm\Python-matplotlib 空间数据可视化\map_colorbar.png',dpi = 600,
             # bbox_inches='tight',width = 12,height=4)
 plt.show()
-
-
-
-
-
 
 
 

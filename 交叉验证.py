@@ -14,86 +14,86 @@ import netCDF4 as nc
 import pandas as pd
 
 # 读取landsatlst数据以及多种遥感光谱指数并聚合到9km====================================================
-variables = {}
-basepath =  r'D:\xiaojie\data1\final'
-basefiles = os.listdir(basepath) #[ndvi,nbdi,lst,...]
-for basefile in basefiles:
-    if(basefile == 'era5lst' or basefile == 'output'):continue
+# variables = {}
+# basepath =  r'D:\xiaojie\data1\final'
+# basefiles = os.listdir(basepath) #[ndvi,nbdi,lst,...]
+# for basefile in basefiles:
+#     if(basefile == 'era5lst' or basefile == 'output'):continue
     
-    varipath = basepath + '\\' + basefile
-    varifiles = os.listdir(varipath)
+#     varipath = basepath + '\\' + basefile
+#     varifiles = os.listdir(varipath)
 
 
 
-    vari9km = np.zeros((18,13)) #四幅景
-    vari5km = np.zeros((32,23))
-    vari2km = np.zeros((81,59),dtype=np.float64)
-    vari500m = np.zeros((337,243),dtype=np.float64)
-    vari300m = np.zeros((540,390),dtype = np.float64)
+#     vari9km = np.zeros((18,13)) #四幅景
+#     vari5km = np.zeros((32,23))
+#     vari2km = np.zeros((81,59),dtype=np.float64)
+#     vari500m = np.zeros((337,243),dtype=np.float64)
+#     vari300m = np.zeros((540,390),dtype = np.float64)
     
-    ndvipath = varipath + '\\' + varifiles[0]
-    dataset = gdal.Open(ndvipath)
-    print(dataset.GetProjection())
-    print("============================================================")
-    band = dataset.GetRasterBand(1)
-    ndvi30 = np.zeros((5400,3900))
-    data = band.ReadAsArray() #30m分辨率,5136*3846
-    ndvi30[:data.shape[0],:data.shape[1]] = data
-    if(basefile == 'landlst'):
-        ndvi30[ndvi30 == 32767] = np.nan
-        ndvi30[ndvi30 == 0] = np.nan
-        ndvi30 = ndvi30/10-273
-    else:
-        ndvi30[ndvi30 == 0] = np.nan
-    for a in range(18):
-        for b in range(13):
-            starti = a*300
-            startj = b *300
-            vari9km[a,b] = np.nanmean(ndvi30[starti:starti+300,startj:startj+300].reshape(-1))
+#     ndvipath = varipath + '\\' + varifiles[0]
+#     dataset = gdal.Open(ndvipath)
+#     print(dataset.GetProjection())
+#     print("============================================================")
+#     band = dataset.GetRasterBand(1)
+#     ndvi30 = np.zeros((5400,3900))
+#     data = band.ReadAsArray() #30m分辨率,5136*3846
+#     ndvi30[:data.shape[0],:data.shape[1]] = data
+#     if(basefile == 'landlst'):
+#         ndvi30[ndvi30 == 32767] = np.nan
+#         ndvi30[ndvi30 == 0] = np.nan
+#         ndvi30 = ndvi30/10-273
+#     else:
+#         ndvi30[ndvi30 == 0] = np.nan
+#     for a in range(18):
+#         for b in range(13):
+#             starti = a*300
+#             startj = b *300
+#             vari9km[a,b] = np.nanmean(ndvi30[starti:starti+300,startj:startj+300].reshape(-1))
             
-    for a in range(32):
-        for b in range(23):
-            starti = a*166
-            startj = b *166
-            vari5km[a,b] = np.nanmean(ndvi30[starti:starti+166,startj:startj+166].reshape(-1))
+#     for a in range(32):
+#         for b in range(23):
+#             starti = a*166
+#             startj = b *166
+#             vari5km[a,b] = np.nanmean(ndvi30[starti:starti+166,startj:startj+166].reshape(-1))
             
-    for a in range(540):
-        for b in range(390):
-            starti = a*10
-            startj = b *10
-            vari300m[a,b] = np.nanmean(ndvi30[starti:starti+10,startj:startj+10].reshape(-1))
+#     for a in range(540):
+#         for b in range(390):
+#             starti = a*10
+#             startj = b *10
+#             vari300m[a,b] = np.nanmean(ndvi30[starti:starti+10,startj:startj+10].reshape(-1))
             
-    for a in range(81):
-        for b in range(59):
-            starti = a*66
-            startj = b *66
-            vari2km[a,b] = np.nanmean(ndvi30[starti:starti+66,startj:startj+66].reshape(-1))
+#     for a in range(81):
+#         for b in range(59):
+#             starti = a*66
+#             startj = b *66
+#             vari2km[a,b] = np.nanmean(ndvi30[starti:starti+66,startj:startj+66].reshape(-1))
             
             
-    for a in range(81):
-        for b in range(59):
-            starti = a*16
-            startj = b *16
-            vari500m[a,b] = np.nanmean(ndvi30[starti:starti+16,startj:startj+16].reshape(-1))
+#     for a in range(81):
+#         for b in range(59):
+#             starti = a*16
+#             startj = b *16
+#             vari500m[a,b] = np.nanmean(ndvi30[starti:starti+16,startj:startj+16].reshape(-1))
                   
                   
-    variables[basefile+'9km'] = vari9km
-    variables[basefile+'5km'] = vari5km
-    variables[basefile+'300m'] = vari300m
-    variables[basefile+'2km'] = vari2km
-    variables[basefile+'500m'] = vari2km
+#     variables[basefile+'9km'] = vari9km
+#     variables[basefile+'5km'] = vari5km
+#     variables[basefile+'300m'] = vari300m
+#     variables[basefile+'2km'] = vari2km
+#     variables[basefile+'500m'] = vari2km
 
 
 
-landlst = variables['landlst'+'9km']   #9km数据
-mndwi = variables['mndwi'+'9km']
-msavi = variables['msavi'+'9km']
-ndbi = variables['ndbi'+'9km']
-ndmi = variables['ndmi'+'9km']
-ndvi = variables['ndvi'+'9km']
-savi = variables['savi'+'9km']
+# landlst = variables['landlst'+'9km']   #9km数据
+# mndwi = variables['mndwi'+'9km']
+# msavi = variables['msavi'+'9km']
+# ndbi = variables['ndbi'+'9km']
+# ndmi = variables['ndmi'+'9km']
+# ndvi = variables['ndvi'+'9km']
+# savi = variables['savi'+'9km']
 
-print("读取各遥感光谱指数成功!")
+# print("读取各遥感光谱指数成功!")
 
 
 # In[]
@@ -112,7 +112,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import GridSearchCV
 import matplotlib.pyplot as plt
-
+plt.rcParams['font.sans-serif']=['SimHei']
+plt.rcParams['axes.unicode_minus']=False
 
 # rf = RandomForestRegressor(n_estimators=200, oob_score = True)   
 rf = RandomForestRegressor(n_estimators=100,random_state=0)   
@@ -125,7 +126,7 @@ Y = sample[:,6]
 print("read sample success")
 x_train, x_validation , y_train, y_validation = train_test_split(X,Y,test_size=0.2)
 
-score_pre = cross_val_score(rf, X, Y, cv=3,scoring = "neg_mean_squared_error").mean()
+score_pre = cross_val_score(rf, X, Y, cv=10,scoring = "neg_mean_squared_error").mean()
 score_pre
 
 # 调参，绘制学习曲线来调参n_estimators（对随机森林影响最大）
@@ -134,7 +135,7 @@ score_lt = []
 # 每隔10步建立一个随机森林，获得不同n_estimators的得分
 for i in range(0,200,10):
     rf = RandomForestRegressor(n_estimators=i+1,random_state=0) 
-    score = cross_val_score(rf, X, Y, cv=3, scoring = "neg_mean_squared_error").mean()
+    score = cross_val_score(rf, X, Y, cv=10, scoring = "neg_mean_squared_error").mean()
     score_lt.append(score)
 score_max = max(score_lt)
 print('最大得分：{}'.format(score_max),
@@ -145,8 +146,8 @@ x = np.arange(1,201,10)
 plt.subplot(111)
 plt.plot(x, score_lt, 'r-')
 plt.show()
-
-
+plt.xlabel('决策树数目(n_estimators)')
+plt.ylabel('RF模型误差取负(neg_mean_squared_error)')
 # In[]
 # 在41附近缩小n_estimators的范围为30-49
 score_lt = []
@@ -163,7 +164,8 @@ x = np.arange(70,90)
 plt.subplot(111)
 plt.plot(x, score_lt,'o-')
 plt.show()
-
+plt.xlabel('决策树数目(n_estimators)')
+plt.ylabel('RF模型误差取负(neg_mean_squared_error)')
 
 # In[]
 # 建立n_estimators为45的随机森林

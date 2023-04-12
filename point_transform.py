@@ -175,15 +175,19 @@ if __name__ == '__main__':
     # coords = geo2imagexy(dataset, x, y)
     # print('(%s, %s)->(%s, %s)' % (x, y, coords[0], coords[1]))
     
-    lon, lat, data = readtif(r'D:\xiaojie\data1\final\landlst\20130809_lst.tif')
+    lon, lat, data = readtif(r'D:\xiaojie\data1\20130809\L8-TIRS-122-044-20130809-LST-B10.TIF')
     # lon1, lat1, data1 = readtif('/home/damon/LSTdownscaled/landsat/test1/Global.tif')
 
-    
+# In[]
     #============================================================================================================
     #4326 为原始空间参考的ESPG编号  2331为目标空间参考的ESPG编号
     dataset = gdal.Open(r'D:\xiaojie\data1\final\landlst\20130809_lst.tif')
     # point2 = lonlat2geo(dataset,24.103209723234617,112.98523662456509)
     point3 = geo2lonlat(dataset,lon[0] ,lat[0])
+    
+    
+    
+    
     # point_trans=point_transform(4326,32650,24.103209723234617,112.98523662456509)
     # point_trans1=point_transform(32650,4326,91756.2661223599,2671500.9063564143) #geo_to_latlon
     # geo = imagexy2geo(dataset, 2, 3)

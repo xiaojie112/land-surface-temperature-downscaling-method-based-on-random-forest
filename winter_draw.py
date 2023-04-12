@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Sun Apr  2 11:11:24 2023
+
+@author: a8362
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Thu Mar 23 00:34:44 2023
 
 @author: a8362
@@ -13,10 +20,10 @@ import numpy as np
 from osgeo import gdal
 import netCDF4 as nc
 import pandas as pd
-
+# In[]
 # 读取landsatlst数据以及多种遥感光谱指数并聚合到9km====================================================
 variables = {}
-basepath =  r'D:\xiaojie\data1\final'
+basepath =  r'D:\xiaojie\data1\winter'
 basefiles = os.listdir(basepath) #[ndvi,nbdi,lst,...]
 for basefile in basefiles:
     if(basefile == 'era5lst' or basefile == 'output'):continue
@@ -86,7 +93,7 @@ for basefile in basefiles:
 
 
 
-landlst = variables['landlst'+'9km']   #9km数据
+landlst = variables['landlst'+'9km']   #9km数据,由30m分辨率的landlst聚合得到
 mndwi = variables['mndwi'+'9km']
 msavi = variables['msavi'+'9km']
 ndbi = variables['ndbi'+'9km']
@@ -95,12 +102,16 @@ ndvi = variables['ndvi'+'9km']
 savi = variables['savi'+'9km']
 
 print("读取各遥感光谱指数成功!")
+
+
+
+
 # ====================================================
 # In[]  读取era5lst数据
 
 era5lst = []
 
-era5path = r'D:\xiaojie\data1\final\era5lst\20130809.nc'
+era5path = r'D:\xiaojie\data1\winter\era5lst\20180212.nc'
 with nc.Dataset(era5path) as file:
     file.set_auto_mask(False)  # 可选
     tempvari = {x: file[x][()] for x in file.variables}
@@ -128,7 +139,7 @@ for row in range(landlst.shape[0]):
         df.loc[len(df.index)] = [mndwi[row,column],msavi[row,column],ndbi[row,column],ndmi[row,column],
                                  ndvi[row,column],savi[row,column],era5lst[row,column]]
 
-df.to_csv(r"D:\xiaojie\data1\sample9km.csv",index=False,sep=',')
+df.to_csv(r"D:\xiaojie\data1\winter_sample9km.csv",index=False,sep=',')
 print("create sample success")
 
 
@@ -168,7 +179,7 @@ def cal_pccs(x, y, n):
 rf = RandomForestRegressor(n_estimators=77,random_state=0,max_depth=5,max_features=3)   
 
 
-df = pd.read_csv(r"D:\xiaojie\data1\sample9km.csv",low_memory = False)
+df = pd.read_csv(r"D:\xiaojie\data1\winter_sample9km.csv",low_memory = False)
 sample = df.to_numpy()
 
 # X,Y = load_boston(return_X_y=True)
@@ -223,7 +234,7 @@ ndmi300m= variables['ndmi300m']
 ndvi300m= variables['ndvi300m']
 savi300m= variables['savi300m']
 
-downscalelst = np.zeros((540,390),dtype = np.float64)
+downscalelst300m = np.zeros((540,390),dtype = np.float64)
 
 df = pd.DataFrame(data=None,columns=['MNDWI_9KM','MSAVI_9KM','NDBI_9KM','NDMI_9KM','NDVI_9KM','SAVI_9KM','ERA5LST_9KM','row', 'colum'])
 for row in range(540):
@@ -235,7 +246,7 @@ for row in range(540):
                or np.isnan(ndmi300m[row,column]) 
                or np.isnan(ndvi300m[row,column])
                or np.isnan(savi300m[row,column])):
-            downscalelst[row,column] = np.nan
+            downscalelst300m[row,column] = np.nan
             continue
         df.loc[len(df.index)] = [mndwi300m[row,column],msavi300m[row,column],ndbi300m[row,column],ndmi300m[row,column],
                                  ndvi300m[row,column],savi300m[row,column],np.nan,row, column]
@@ -252,7 +263,7 @@ df_to_arr = np.array(df)
 predict = df_to_arr[:,:6]
 predict_result = rf.predict(predict)
 for i in range(df_to_arr.shape[0]):
-    downscalelst[int(df_to_arr[i,7]),int(df_to_arr[i,8])] = predict_result[i]
+    downscalelst300m[int(df_to_arr[i,7]),int(df_to_arr[i,8])] = predict_result[i]
 
 
 # In[] 降尺度到500m
@@ -333,38 +344,19 @@ for i in range(df_to_arr.shape[0]):
 
 
 # In[] landsat30m聚合到landsat500m
-dataset = gdal.Open(r'D:\xiaojie\data1\final\landlst\20130809_lst.tif')
-band = dataset.GetRasterBand(1)
-landsatlst30m = np.zeros((5400,3900))
-data = band.ReadAsArray() #30m分辨率,5136*3846
-landsatlst30m[:data.shape[0],:data.shape[1]] = data
-landsatlst30m[landsatlst30m == 32767] = np.nan
-landsatlst30m[landsatlst30m == 0] = np.nan
-landsatlst30m = landsatlst30m/10-273
+# dataset = gdal.Open(r'D:\xiaojie\data1\final\landlst\20130809_lst.tif')
+# band = dataset.GetRasterBand(1)
+# landsatlst30m = np.zeros((5400,3900))
+# data = band.ReadAsArray() #30m分辨率,5136*3846
+# landsatlst30m[:data.shape[0],:data.shape[1]] = data
+# landsatlst30m[landsatlst30m == 32767] = np.nan
+# landsatlst30m[landsatlst30m == 0] = np.nan
+# landsatlst30m = landsatlst30m/10-273
 
-landsatlst500m = np.zeros((337,243))
-
-for a in range(337):
-    for b in range(243):
-        starti = a*16
-        startj = b *16
-        landsatlst500m[a,b] = np.nanmean(landsatlst30m[starti:starti+16,startj:startj+16].reshape(-1))
-        
-        
-        
-        
-# In[]  landsat2km
-landsatlst2km = np.zeros((81,59))
-for a in range(81):
-    for b in range(59):
-        starti = a*66
-        startj = b *66
-        landsatlst2km[a,b] = np.nanmean(landsatlst30m[starti:starti+66,startj:startj+66].reshape(-1))
-
-
-# In[]
+landsatlst500m = variables['landlst500m']
+landsatlst2km = variables['landlst2km']
 landsat300m = variables['landlst300m']
-downscalelst300m = np.load(r'D:\xiaojie\data1\final\output\code\downscalelst300m.npy')
+# downscalelst300m = np.load(r'D:\xiaojie\data1\final\output\code\downscalelst300m.npy')
 
 
 
@@ -509,16 +501,16 @@ vmax = data_max
 
 # im1 = ax[0].imshow(tif_data01,extent = extent, cmap = 'jet')
 
-im1 = ax[0][0].imshow(tif_data01, cmap = 'jet', vmin = 25, vmax = 45)
+im1 = ax[0][0].imshow(tif_data01, cmap = 'jet', vmin = 5, vmax = 25)
 
 # ax[0].set_axis_off()
 im2 = ax[0][1].imshow(tif_data02,cmap = 'jet', vmin = np.nanmin(tif_data02), vmax = np.nanmax(tif_data02))
 
-im3 = ax[0][2].imshow(tif_data03,cmap = 'jet', vmin = 25, vmax = 45)
+im3 = ax[0][2].imshow(tif_data03,cmap = 'jet', vmin = 5, vmax = 25)
 
 im4 = ax[1][0].imshow(tif_data04,cmap = 'jet', vmin = np.nanmin(tif_data04), vmax = np.nanmax(tif_data04))
 
-im5 = ax[1][1].imshow(tif_data05,cmap = 'jet', vmin = np.nanmin(tif_data05), vmax = np.nanmax(tif_data05))
+im5 = ax[1][1].imshow(tif_data05,cmap = 'jet', vmin = 5, vmax = 25)
 
 im6 = ax[1][2].imshow(tif_data06,cmap = 'jet', vmin = np.nanmin(tif_data06), vmax = np.nanmax(tif_data06))
 
